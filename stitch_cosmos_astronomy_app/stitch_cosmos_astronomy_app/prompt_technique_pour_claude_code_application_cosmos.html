@@ -1,0 +1,74 @@
+# Spécifications Techniques : Application Mobile COSMOS (Astronomie & Astrophysique)
+
+## 1. Stack Technique Cible
+- **Framework :** React Native avec Expo SDK 52
+- **Styling :** NativeWind v4 (Tailwind CSS)
+- **Navigation :** Expo Router v3
+- **Animations :** Reanimated 3
+- **Device :** Mobile (iPhone 14 standard 390x844px)
+
+## 2. Design System (Cosmos Galactic)
+
+### Palette de Couleurs
+- **Background Primary :** #03020a (Espace profond)
+- **Background Secondary :** #080616
+- **Cards :** rgba(255, 255, 255, 0.04) avec Glassmorphism (blur-xl)
+- **Accent Purple :** #9b5de5 (Lueur primaire)
+- **Accent Cyan :** #00f5d4 (Éléments interactifs)
+- **Accent Gold :** #ffd166 (Points clés/Highlighter)
+- **Accent Rose :** #f15bb5 (Niveaux avancés)
+- **Text Primary :** #e8e4f5
+- **Text Muted :** #7a7290
+- **Borders :** rgba(255, 255, 255, 0.07)
+
+### Typographie
+- **Titres (Display) :** Font 'Cinzel' (Serif) - Poids 400, 600, 900.
+- **Corps / UI :** Font 'DM Sans' (Sans-serif) - Poids 300, 400, 500.
+- **Formules / Code :** Font 'Space Mono'.
+
+### Composants & Formes
+- **Radius :** Cards (24px), Buttons (18px), Chips (12px).
+- **Effets :** Ombres portées avec halo violet (#9b5de5 à 30-50% d'opacité).
+- **Arrière-plan :** Champ d'étoiles animé constant (petits points blancs, opacité variable, scintillement subtil).
+
+---
+
+## 3. Description des Écrans (à reproduire)
+
+### Écran 1 : Splash / Onboarding
+- **Visuel :** Logo central (concentric rings) avec emoji galaxie.
+- **Typographie :** "COSMOS" en Cinzel 900 (tracking 0.3em).
+- **CTA :** Bouton large dégradé violet vers indigo.
+
+### Écran 2 : Sélection du Niveau
+- **Contenu :** 3 cartes empilées (Curieux, Passionné, Étudiant).
+- **Design :** Badges colorés (Cyan/Purple/Rose) en haut à droite de chaque carte.
+- **Interactivité :** Bordure lumineuse (glow) sur l'élément sélectionné.
+
+### Écran 3 : Accueil (Dashboard)
+- **Header :** Barre de progression XP (dégradé Purple -> Cyan).
+- **Focus :** Carte "Module du jour" (La Relativité Restreinte) avec illustration de planète flottante.
+- **Navigation :** Liste horizontale de thèmes (puces avec icônes).
+
+### Écran 4 : Détail du Module
+- **Hero :** En-tête immersif avec titre en Cinzel et planète 3D/Emoji.
+- **Structure :** Onglets de niveau (Curieux/Passionné/Expert), carte d'analogie dorée, et boîte de formule (E=mc²) en Space Mono.
+- **Engagement :** Bouton Quiz en bas de page.
+
+### Écran 5 : Inscription
+- **Interface :** Formulaire épuré avec champs en verre dépoli (Glassmorphism).
+- **Inputs :** Bordure cyan lumineuse au focus.
+- **Social :** Boutons de connexion Google et Apple stylisés.
+
+### Écran 6 : Progrès & Badges
+- **Gamification :** Badge de niveau circulaire central avec halo violet.
+- **Stats :** Grille de statistiques clés (Modules, Série, Badges).
+- **Collection :** Grille de badges (icônes déverrouillées vs grisées avec cadenas).
+
+---
+
+## 4. Instructions de Développement
+1. Implémenter le `StarFieldBackground` comme composant parent global.
+2. Utiliser `LinearGradient` (expo-linear-gradient) pour tous les boutons et halos.
+3. Configurer NativeWind pour supporter les fontes personnalisées et les opacités arbitraires.
+4. Assurer une fluidité 60fps pour les transitions d'écrans avec Expo Router.

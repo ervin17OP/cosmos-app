@@ -1,0 +1,35 @@
+// Système typographique Cosmos
+export const Typography = {
+  fontFamily: {
+    headline: 'SpaceGrotesk_700Bold',
+    headlineMedium: 'SpaceGrotesk_600SemiBold',
+    headlineRegular: 'SpaceGrotesk_400Regular',
+    body: 'Manrope_400Regular',
+    bodyMedium: 'Manrope_500Medium',
+    bodyLight: 'Manrope_300Light',
+    label: 'SpaceGrotesk_500Medium',
+    cinzel: 'Cinzel_400Regular',
+    cinzelBold: 'Cinzel_600SemiBold',
+    mono: 'SpaceMono_400Regular',
+  },
+  fontSize: {
+    xs: 10,
+    sm: 12,
+    base: 14,
+    md: 16,
+    lg: 18,
+    xl: 20,
+    '2xl': 24,
+    '3xl': 28,
+    '4xl': 32,
+    '5xl': 40,
+    display: 56,
+  },
+  letterSpacing: {
+    tight: -0.5,
+    normal: 0,
+    wide: 1,
+    wider: 2,
+    widest: 4,
+  },
+} as const;

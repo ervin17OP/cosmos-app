@@ -1,0 +1,43 @@
+# Dépendances
+node_modules/
+cosmos/node_modules/
+
+# Expo
+.expo/
+cosmos/.expo/
+dist/
+web-build/
+cosmos/dist/
+cosmos/web-build/
+
+# Env — ne jamais committer les credentials
+.env*.local
+cosmos/.env*.local
+
+# Metro
+.metro-health-check*
+
+# Native builds
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+/ios
+/android
+cosmos/ios
+cosmos/android
+
+# OS
+.DS_Store
+Thumbs.db
+
+# TypeScript
+*.tsbuildinfo
+cosmos/expo-env.d.ts
+
+# IDE
+.vscode/
+.idea/

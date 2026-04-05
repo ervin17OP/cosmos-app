@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="fr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>COSMOS - L'univers à portée de main</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600&amp;family=Space+Grotesk:wght@400;600;700&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-container-highest": "#272335",
+                      "on-tertiary": "#664c00",
+                      "surface-container": "#1a1826",
+                      "outline-variant": "#494654",
+                      "on-secondary-fixed-variant": "#006859",
+                      "surface-container-lowest": "#000000",
+                      "on-primary": "#440080",
+                      "primary-fixed-dim": "#b374fe",
+                      "tertiary-fixed-dim": "#eabe55",
+                      "tertiary": "#ffdb8f",
+                      "on-tertiary-fixed": "#443100",
+                      "on-tertiary-fixed-variant": "#674d00",
+                      "surface-container-high": "#211d2e",
+                      "primary-container": "#bd87ff",
+                      "error": "#ff6e84",
+                      "surface-bright": "#2d2a3d",
+                      "on-primary-container": "#340064",
+                      "secondary-fixed-dim": "#00efce",
+                      "on-surface": "#e9e3f5",
+                      "background": "#0f0d18",
+                      "on-background": "#e9e3f5",
+                      "inverse-primary": "#7b3cc4",
+                      "outline": "#777383",
+                      "surface-container-low": "#14121f",
+                      "on-error-container": "#ffb2b9",
+                      "on-primary-fixed-variant": "#41007a",
+                      "secondary-container": "#006b5b",
+                      "surface-variant": "#272335",
+                      "primary-dim": "#bb83ff",
+                      "on-secondary-fixed": "#00483d",
+                      "inverse-on-surface": "#575362",
+                      "secondary-dim": "#00efce",
+                      "on-primary-fixed": "#000000",
+                      "tertiary-fixed": "#f9cc61",
+                      "on-secondary": "#005d4f",
+                      "inverse-surface": "#fdf8ff",
+                      "surface-tint": "#c799ff",
+                      "on-error": "#490013",
+                      "secondary-fixed": "#26fedc",
+                      "error-container": "#a70138",
+                      "primary": "#c799ff",
+                      "primary-fixed": "#bd87ff",
+                      "error-dim": "#d73357",
+                      "tertiary-dim": "#eabe55",
+                      "surface-dim": "#0f0d18",
+                      "secondary": "#26fedc",
+                      "on-secondary-container": "#ddfff5",
+                      "tertiary-container": "#f9cc61",
+                      "on-surface-variant": "#aea8b9",
+                      "on-tertiary-container": "#5b4400",
+                      "surface": "#0f0d18"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "fontFamily": {
+                      "headline": [
+                              "Space Grotesk"
+                      ],
+                      "body": [
+                              "Manrope"
+                      ],
+                      "label": [
+                              "Space Grotesk"
+                      ]
+              }
+            },
+          },
+        }
+      </script>
+<style>
+        .star-field {
+            background-image: 
+                radial-gradient(1px 1px at 20px 30px, #e9e3f5, rgba(0,0,0,0)),
+                radial-gradient(1px 1px at 40px 70px, #e9e3f5, rgba(0,0,0,0)),
+                radial-gradient(1.5px 1.5px at 50px 160px, #e9e3f5, rgba(0,0,0,0)),
+                radial-gradient(1px 1px at 90px 40px, #e9e3f5, rgba(0,0,0,0)),
+                radial-gradient(2px 2px at 130px 80px, #e9e3f5, rgba(0,0,0,0)),
+                radial-gradient(1px 1px at 160px 120px, #e9e3f5, rgba(0,0,0,0));
+            background-repeat: repeat;
+            background-size: 200px 200px;
+        }
+      </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body min-h-screen flex flex-col items-center justify-center relative overflow-hidden">
+<!-- Atmospheric Depth Elements -->
+<div class="absolute inset-0 z-0 opacity-40 star-field mix-blend-screen"></div>
+<div class="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary/20 blur-[120px] z-0 pointer-events-none"></div>
+<div class="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full bg-secondary/10 blur-[150px] z-0 pointer-events-none"></div>
+<!-- Main Content Container -->
+<div class="relative z-10 flex flex-col items-center justify-center w-full max-w-md px-6 h-full flex-grow">
+<!-- Logo Element -->
+<div class="relative flex items-center justify-center w-40 h-40 mb-10 mt-8">
+<!-- Pulsing Rings -->
+<div class="absolute inset-0 rounded-full border-[1.5px] border-primary/30 animate-[ping_3s_cubic-bezier(0,0,0.2,1)_infinite]"></div>
+<div class="absolute inset-4 rounded-full border-[1.5px] border-secondary/40 opacity-70"></div>
+<div class="absolute inset-8 rounded-full border border-primary/20"></div>
+<!-- Center Core -->
+<div class="absolute inset-10 rounded-full bg-gradient-to-tr from-primary/10 to-transparent backdrop-blur-xl flex items-center justify-center shadow-[0_0_30px_rgba(199,153,255,0.2)]">
+<span class="text-5xl" style="filter: drop-shadow(0 0 10px rgba(199,153,255,0.5));">🌌</span>
+</div>
+</div>
+<!-- Typography & Branding -->
+<div class="text-center mb-16 space-y-4">
+<h1 class="font-headline text-[3.5rem] md:text-[4rem] font-bold tracking-[0.3em] text-on-surface leading-none drop-shadow-[0_0_20px_rgba(199,153,255,0.4)] ml-[0.3em]">
+                COSMOS
+            </h1>
+<p class="font-body text-sm md:text-base text-secondary tracking-[0.2em] uppercase font-light opacity-90 drop-shadow-[0_0_10px_rgba(38,254,220,0.3)]">
+                L'univers à portée de main
+            </p>
+</div>
+<!-- Call to Actions -->
+<div class="w-full flex flex-col gap-4 mt-auto mb-12">
+<!-- Primary Button (Plasma Core) -->
+<button class="w-full h-14 bg-gradient-to-r from-primary to-primary-dim rounded-[18px] text-on-primary-container font-headline text-base font-bold tracking-wide shadow-[0_4px_20px_rgba(199,153,255,0.15)] hover:shadow-[0_0_30px_rgba(38,254,220,0.3)] transition-all duration-300 ease-out flex items-center justify-center gap-2 group">
+<span>Commencer l'exploration</span>
+<span class="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform" data-icon="arrow_forward">arrow_forward</span>
+</button>
+<!-- Secondary/Ghost Button -->
+<button class="w-full h-14 bg-transparent border border-outline-variant/20 rounded-[18px] text-primary font-headline text-base font-semibold tracking-wide hover:bg-white/5 transition-all duration-300 ease-out">
+                J'ai déjà un compte
+            </button>
+</div>
+</div>
+</body></html>
