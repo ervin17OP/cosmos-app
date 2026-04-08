@@ -12,6 +12,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StarField } from '@/components/ui/StarField';
+import { PremiumModal } from '@/components/ui/PremiumModal';
 import { LevelSelector } from '@/components/module/LevelSelector';
 import { FormulaBox } from '@/components/module/FormulaBox';
 import { AnalogyCard } from '@/components/module/AnalogyCard';
@@ -107,6 +108,7 @@ export default function ModuleScreen() {
   const [content, setContent] = useState<ContentBlock[]>([]);
   const [loading, setLoading] = useState(true);
   const [moduleInfo, setModuleInfo] = useState<ModuleInfo | null>(null);
+  const [premiumModalVisible, setPremiumModalVisible] = useState(false);
 
   // Fallback info depuis les constantes locales (démo sans Supabase)
   const localModule = MODULES.find((m) => m.id === id) ?? MODULES[0];
@@ -252,9 +254,33 @@ export default function ModuleScreen() {
           {/* Sélecteur de niveau */}
           <LevelSelector selectedLevel={activeLevel} onLevelChange={setActiveLevel} />
 
-          {/* Contenu */}
+          {/* Contenu ou premium gate */}
           {loading ? (
             <ActivityIndicator color={Colors.primary} size="large" style={{ marginTop: 40 }} />
+          ) : displayModule.isPremium ? (
+            <View style={styles.contentBlocks}>
+              {/* Aperçu du premier bloc */}
+              {content.slice(0, 1).map((block, index) => renderBlock(block, index))}
+
+              {/* Verrou premium */}
+              <View style={styles.premiumGate}>
+                <View style={styles.premiumBlur} />
+                <View style={styles.premiumCard}>
+                  <Text style={styles.premiumEmoji}>💎</Text>
+                  <Text style={styles.premiumTitle}>Contenu Premium</Text>
+                  <Text style={styles.premiumDesc}>
+                    Ce module fait partie du catalogue Premium. Débloquez l'accès illimité à tous les contenus avancés.
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.premiumButton}
+                    activeOpacity={0.85}
+                    onPress={() => setPremiumModalVisible(true)}
+                  >
+                    <Text style={styles.premiumButtonText}>Débloquer Premium →</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
           ) : (
             <View style={styles.contentBlocks}>
               {content.map((block, index) => renderBlock(block, index))}
@@ -266,6 +292,12 @@ export default function ModuleScreen() {
       {/* Décorations */}
       <View style={styles.decoPurple} />
       <View style={styles.decoCyan} />
+
+      <PremiumModal
+        visible={premiumModalVisible}
+        onClose={() => setPremiumModalVisible(false)}
+        moduleName={displayModule.title}
+      />
     </View>
   );
 }
@@ -365,4 +397,54 @@ const styles = StyleSheet.create({
   quizPlayIcon: { color: Colors.onPrimary, fontSize: 18, marginLeft: 2 },
   decoPurple: { position: 'absolute', top: '25%', right: -80, width: 200, height: 200, borderRadius: 100, backgroundColor: Colors.primary, opacity: 0.05 },
   decoCyan: { position: 'absolute', bottom: '25%', left: -80, width: 160, height: 160, borderRadius: 80, backgroundColor: Colors.secondary, opacity: 0.04 },
+  // Premium gate
+  premiumGate: { marginTop: 4, position: 'relative', borderRadius: 20, overflow: 'hidden' },
+  premiumBlur: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(15, 13, 24, 0.85)',
+    zIndex: 1,
+  },
+  premiumCard: {
+    zIndex: 2,
+    alignItems: 'center',
+    paddingVertical: 48,
+    paddingHorizontal: 24,
+    gap: 16,
+    borderWidth: 1,
+    borderColor: `${Colors.tertiary}25`,
+    borderRadius: 20,
+    backgroundColor: `${Colors.tertiary}05`,
+  },
+  premiumEmoji: { fontSize: 48 },
+  premiumTitle: {
+    fontFamily: Typography.fontFamily.cinzelBold,
+    fontSize: Typography.fontSize['2xl'],
+    color: Colors.onSurface,
+  },
+  premiumDesc: {
+    fontFamily: Typography.fontFamily.body,
+    fontSize: Typography.fontSize.sm,
+    color: Colors.onSurfaceVariant,
+    lineHeight: 22,
+    textAlign: 'center',
+  },
+  premiumButton: {
+    marginTop: 8,
+    height: 50,
+    paddingHorizontal: 28,
+    backgroundColor: Colors.tertiary,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: Colors.tertiary,
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  premiumButtonText: {
+    fontFamily: Typography.fontFamily.headline,
+    fontSize: Typography.fontSize.base,
+    color: Colors.background,
+    letterSpacing: 0.5,
+  },
 });

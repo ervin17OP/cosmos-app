@@ -9,6 +9,7 @@ const DEFAULT_STATS: ProgressStats = {
   badgesEarned: 0,
   xp: 0,
   themeProgress: [],
+  completedModuleIds: [],
 };
 
 export function useProgress() {
@@ -66,6 +67,7 @@ export function useProgress() {
         badgesEarned: Math.floor(completed.length / 2), // 1 badge tous les 2 modules
         xp: profile?.xp ?? 0,
         themeProgress,
+        completedModuleIds: completed.map((p) => p.module_id),
       });
     } catch (error) {
       console.warn('[useProgress] Erreur chargement progression:', error);

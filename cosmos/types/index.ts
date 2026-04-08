@@ -105,6 +105,7 @@ export interface ProgressStats {
   badgesEarned: number;
   xp: number;
   themeProgress: ThemeProgress[];
+  completedModuleIds: string[];
 }
 
 export interface ThemeProgress {

@@ -1,10 +1,11 @@
 // Écran Explorer — carte des thèmes
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StarField } from '@/components/ui/StarField';
+import { PremiumModal } from '@/components/ui/PremiumModal';
 import { Colors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Theme, Module } from '@/types';
@@ -13,6 +14,7 @@ import { useThemes } from '@/hooks/useThemes';
 export default function ExploreScreen() {
   const router = useRouter();
   const { themes, modules, loading } = useThemes();
+  const [premiumModule, setPremiumModule] = useState<Module | null>(null);
 
   return (
     <View style={styles.container}>
@@ -48,18 +50,28 @@ export default function ExploreScreen() {
                 {themeModules.map((module: Module) => (
                   <TouchableOpacity
                     key={module.id}
-                    style={styles.moduleCard}
-                    onPress={() => router.push(`/module/${module.id}`)}
+                    style={[styles.moduleCard, module.isPremium && styles.moduleCardPremium]}
+                    onPress={() => {
+                      if (module.isPremium) {
+                        setPremiumModule(module);
+                      } else {
+                        router.push(`/module/${module.id}`);
+                      }
+                    }}
                     activeOpacity={0.8}
                   >
                     <View style={styles.moduleInfo}>
                       <Text style={styles.moduleTitle}>{module.title}</Text>
                       <Text style={styles.moduleMeta}>
                         ⏱ {module.durationMinutes} min
-                        {module.isPremium ? '  🔒 Premium' : '  ✓ Gratuit'}
+                        {module.isPremium ? '  💎 Premium' : '  ✓ Gratuit'}
                       </Text>
                     </View>
-                    <Text style={styles.moduleArrow}>→</Text>
+                    {module.isPremium ? (
+                      <Text style={styles.lockIcon}>🔒</Text>
+                    ) : (
+                      <Text style={styles.moduleArrow}>→</Text>
+                    )}
                   </TouchableOpacity>
                 ))}
               </View>
@@ -67,6 +79,12 @@ export default function ExploreScreen() {
           })}
         </ScrollView>
       </SafeAreaView>
+
+      <PremiumModal
+        visible={!!premiumModule}
+        onClose={() => setPremiumModule(null)}
+        moduleName={premiumModule?.title}
+      />
     </View>
   );
 }
@@ -98,4 +116,9 @@ const styles = StyleSheet.create({
   moduleTitle: { fontFamily: Typography.fontFamily.bodyMedium, fontSize: Typography.fontSize.base, color: Colors.onSurface, marginBottom: 4 },
   moduleMeta: { fontFamily: Typography.fontFamily.label, fontSize: Typography.fontSize.xs, color: Colors.onSurfaceVariant, letterSpacing: 0.5 },
   moduleArrow: { color: Colors.primary, fontSize: 18, marginLeft: 12 },
+  moduleCardPremium: {
+    borderColor: `${Colors.tertiary}30`,
+    backgroundColor: `${Colors.tertiary}05`,
+  },
+  lockIcon: { fontSize: 16, marginLeft: 12 },
 });
