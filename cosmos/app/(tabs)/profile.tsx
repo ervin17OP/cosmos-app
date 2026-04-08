@@ -1,6 +1,6 @@
 // Écran Profil utilisateur
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Switch } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -9,6 +9,7 @@ import { Colors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { supabase } from '@/lib/supabase';
 import { useProfile } from '@/hooks/useProfile';
+import { PremiumModal } from '@/components/ui/PremiumModal';
 
 const LEVEL_LABELS: Record<string, string> = {
   curious: 'Curieux',
@@ -19,6 +20,7 @@ const LEVEL_LABELS: Record<string, string> = {
 export default function ProfileScreen() {
   const router = useRouter();
   const { profile, loading } = useProfile();
+  const [premiumVisible, setPremiumVisible] = useState(false);
 
   // Écran "non connecté"
   if (!loading && !profile) {
@@ -105,16 +107,16 @@ export default function ProfileScreen() {
               <Text style={styles.optionArrow}>→</Text>
             </TouchableOpacity>
             <View style={styles.separator} />
-            <TouchableOpacity style={styles.option} onPress={() => {}}>
+            <TouchableOpacity style={styles.option} onPress={() => router.push('/settings/notifications' as any)}>
               <Text style={styles.optionIcon}>🔔</Text>
               <Text style={styles.optionLabel}>Notifications</Text>
               <Text style={styles.optionArrow}>→</Text>
             </TouchableOpacity>
             <View style={styles.separator} />
-            <TouchableOpacity style={styles.option} onPress={() => {}}>
+            <TouchableOpacity style={styles.option} onPress={() => setPremiumVisible(true)}>
               <Text style={styles.optionIcon}>💎</Text>
               <Text style={styles.optionLabel}>Passer à Premium</Text>
-              <Text style={styles.optionArrow}>→</Text>
+              <Text style={[styles.optionArrow, { color: Colors.tertiary }]}>→</Text>
             </TouchableOpacity>
           </View>
 
@@ -124,6 +126,8 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
       </SafeAreaView>
+
+      <PremiumModal visible={premiumVisible} onClose={() => setPremiumVisible(false)} />
     </View>
   );
 }

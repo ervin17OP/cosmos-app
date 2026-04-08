@@ -1,7 +1,12 @@
-// Layout des onglets principaux avec barre de navigation bottom personnalisée
+// Layout des onglets principaux — tab bar avec animations Reanimated
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { View, Text, StyleSheet, Platform } from 'react-native';
+import { Pressable, View, Text, StyleSheet, Platform } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from 'react-native-reanimated';
 import { Colors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 
@@ -12,11 +17,25 @@ interface TabIconProps {
 }
 
 function TabIcon({ focused, label, emoji }: TabIconProps) {
+  const scale = useSharedValue(1);
+
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
   return (
-    <View style={styles.tabItem}>
-      <Text style={[styles.tabEmoji, focused && styles.tabEmojiFocused]}>{emoji}</Text>
-      <Text style={[styles.tabLabel, focused && styles.tabLabelFocused]}>{label}</Text>
-    </View>
+    <Pressable
+      onPressIn={() => { scale.value = withSpring(0.82, { damping: 12, stiffness: 200 }); }}
+      onPressOut={() => { scale.value = withSpring(1,    { damping: 12, stiffness: 200 }); }}
+      style={styles.pressable}
+    >
+      <Animated.View style={[styles.tabItem, animStyle]}>
+        {/* Indicateur actif */}
+        {focused && <View style={styles.activeDot} />}
+        <Text style={[styles.tabEmoji, focused && styles.tabEmojiFocused]}>{emoji}</Text>
+        <Text style={[styles.tabLabel, focused && styles.tabLabelFocused]}>{label}</Text>
+      </Animated.View>
+    </Pressable>
   );
 }
 
@@ -26,7 +45,7 @@ export default function TabsLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: 'rgba(15, 13, 24, 0.85)',
+          backgroundColor: 'rgba(15, 13, 24, 0.92)',
           borderTopWidth: 0,
           borderTopLeftRadius: 24,
           borderTopRightRadius: 24,
@@ -35,14 +54,15 @@ export default function TabsLayout() {
           paddingBottom: Platform.OS === 'ios' ? 24 : 10,
           position: 'absolute',
           shadowColor: Colors.primary,
-          shadowOpacity: 0.15,
-          shadowRadius: 24,
+          shadowOpacity: 0.18,
+          shadowRadius: 28,
           shadowOffset: { width: 0, height: -8 },
           elevation: 20,
         },
         tabBarActiveTintColor: Colors.secondary,
         tabBarInactiveTintColor: `${Colors.primary}60`,
         tabBarShowLabel: false,
+        tabBarButton: (props) => <Pressable {...props} />,
       }}
     >
       <Tabs.Screen
@@ -82,11 +102,21 @@ export default function TabsLayout() {
 }
 
 const styles = StyleSheet.create({
+  pressable: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   tabItem: {
     alignItems: 'center',
     justifyContent: 'center',
     gap: 3,
     paddingTop: 4,
+    position: 'relative',
+  },
+  activeDot: {
+    position: 'absolute',
+    top: -8,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: Colors.secondary,
   },
   tabEmoji: {
     fontSize: 22,
