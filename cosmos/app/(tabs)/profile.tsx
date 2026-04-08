@@ -1,6 +1,6 @@
 // Écran Profil utilisateur
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -8,9 +8,45 @@ import { StarField } from '@/components/ui/StarField';
 import { Colors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { supabase } from '@/lib/supabase';
+import { useProfile } from '@/hooks/useProfile';
+
+const LEVEL_LABELS: Record<string, string> = {
+  curious: 'Curieux',
+  passionate: 'Passionné',
+  student: 'Étudiant',
+};
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const { profile, loading } = useProfile();
+
+  // Écran "non connecté"
+  if (!loading && !profile) {
+    return (
+      <View style={styles.container}>
+        <StarField />
+        <SafeAreaView style={[styles.safeArea, { alignItems: 'center', justifyContent: 'center', gap: 16, paddingHorizontal: 32 }]} edges={['top']}>
+          <Text style={{ fontSize: 56 }}>🚀</Text>
+          <Text style={[styles.title, { textAlign: 'center' }]}>Rejoignez{'\n'}l'aventure</Text>
+          <Text style={{ fontFamily: Typography.fontFamily.body, fontSize: Typography.fontSize.sm, color: Colors.onSurfaceVariant, textAlign: 'center', marginBottom: 8 }}>
+            Créez un compte pour sauvegarder votre progression et débloquer tous les modules.
+          </Text>
+          <TouchableOpacity
+            style={{ width: '100%', height: 56, backgroundColor: Colors.primary, borderRadius: 18, alignItems: 'center', justifyContent: 'center', shadowColor: Colors.primary, shadowOpacity: 0.35, shadowRadius: 20, elevation: 8 }}
+            onPress={() => router.push('/(auth)/register')}
+          >
+            <Text style={{ fontFamily: Typography.fontFamily.headline, fontSize: Typography.fontSize.md, color: Colors.onPrimary }}>Créer un compte</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={{ width: '100%', height: 50, borderRadius: 16, borderWidth: 1, borderColor: `${Colors.primary}40`, alignItems: 'center', justifyContent: 'center' }}
+            onPress={() => router.push('/(auth)/login')}
+          >
+            <Text style={{ fontFamily: Typography.fontFamily.bodyMedium, fontSize: Typography.fontSize.base, color: Colors.primary }}>J'ai déjà un compte</Text>
+          </TouchableOpacity>
+        </SafeAreaView>
+      </View>
+    );
+  }
 
   async function handleLogout() {
     Alert.alert(
@@ -49,8 +85,16 @@ export default function ProfileScreen() {
                 <Text style={styles.avatarEmoji}>👨‍🚀</Text>
               </View>
             </View>
-            <Text style={styles.profileName}>Jean-Pierre</Text>
-            <Text style={styles.profileLevel}>Niveau Curieux · 380 XP</Text>
+            {loading ? (
+              <ActivityIndicator color={Colors.primary} style={{ marginTop: 8 }} />
+            ) : (
+              <>
+                <Text style={styles.profileName}>{profile?.username ?? 'Astronaute'}</Text>
+                <Text style={styles.profileLevel}>
+                  Niveau {LEVEL_LABELS[profile?.level ?? 'curious']} · {profile?.xp ?? 0} XP
+                </Text>
+              </>
+            )}
           </View>
 
           {/* Options */}

@@ -1,17 +1,18 @@
 // Écran Explorer — carte des thèmes
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StarField } from '@/components/ui/StarField';
 import { Colors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
-import { THEMES, MODULES } from '@/constants/themes';
 import { Theme, Module } from '@/types';
+import { useThemes } from '@/hooks/useThemes';
 
 export default function ExploreScreen() {
   const router = useRouter();
+  const { themes, modules, loading } = useThemes();
 
   return (
     <View style={styles.container}>
@@ -28,8 +29,11 @@ export default function ExploreScreen() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {THEMES.map((theme: Theme) => {
-            const themeModules = MODULES.filter((m) => m.themeId === theme.id);
+          {loading ? (
+            <ActivityIndicator color={Colors.primary} size="large" style={{ marginTop: 60 }} />
+          ) : null}
+          {themes.map((theme: Theme) => {
+            const themeModules = modules.filter((m) => m.themeId === theme.id);
             return (
               <View key={theme.id} style={styles.themeSection}>
                 <View style={styles.themeHeader}>

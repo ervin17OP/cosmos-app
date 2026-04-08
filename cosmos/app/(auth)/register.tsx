@@ -58,7 +58,7 @@ export default function RegisterScreen() {
 
       if (error) throw error;
 
-      router.replace('/onboarding/level');
+      router.replace('/(tabs)');
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Erreur inconnue';
       Alert.alert('Erreur d\'inscription', message);

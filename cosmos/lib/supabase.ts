@@ -63,3 +63,19 @@ export async function addXP(userId: string, amount: number) {
     .update({ xp: (profile.xp ?? 0) + amount })
     .eq('id', userId);
 }
+
+// Helper : mettre à jour le streak quotidien
+export async function updateStreak(userId: string) {
+  const { data: profile } = await supabase
+    .from('users_profiles')
+    .select('streak_days, created_at')
+    .eq('id', userId)
+    .single();
+
+  if (!profile) return;
+
+  return supabase
+    .from('users_profiles')
+    .update({ streak_days: (profile.streak_days ?? 0) + 1 })
+    .eq('id', userId);
+}

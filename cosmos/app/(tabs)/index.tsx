@@ -4,9 +4,8 @@ import {
   View,
   Text,
   ScrollView,
-  TouchableOpacity,
   StyleSheet,
-  Image,
+  ActivityIndicator,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -18,12 +17,31 @@ import { Colors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { THEMES, MODULES } from '@/constants/themes';
 import { Theme } from '@/types';
+import { useProfile } from '@/hooks/useProfile';
+import { useProgress } from '@/hooks/useProgress';
+import { useThemes } from '@/hooks/useThemes';
+
+// Libellés des niveaux pour l'XPBar
+const LEVEL_LABELS: Record<string, string> = {
+  curious: 'Curieux',
+  passionate: 'Passionné',
+  student: 'Étudiant',
+};
 
 export default function HomeScreen() {
   const [activeTheme, setActiveTheme] = useState<string>(THEMES[0].id);
+  const { profile, loading: profileLoading } = useProfile();
+  const { stats } = useProgress();
+  const { themes, modules } = useThemes();
 
-  // Module mis en avant (premier module non premium)
-  const featuredModule = MODULES[0];
+  // Module mis en avant (premier module non premium depuis Supabase)
+  const featuredModule = modules.find((m) => !m.isPremium) ?? modules[0];
+
+  // Calcul XP vers le prochain niveau (500 XP par palier)
+  const XP_PER_LEVEL = 500;
+  const xp = profile?.xp ?? 0;
+  const xpToNext = XP_PER_LEVEL - (xp % XP_PER_LEVEL);
+  const rankLabel = `Niveau ${LEVEL_LABELS[profile?.level ?? 'curious']}`;
 
   return (
     <View style={styles.container}>
@@ -35,7 +53,11 @@ export default function HomeScreen() {
         <View style={styles.header}>
           <View>
             <Text style={styles.greeting}>Bonjour, Explorateur</Text>
-            <Text style={styles.username}>Jean-Pierre</Text>
+            {profileLoading ? (
+              <ActivityIndicator color={Colors.primary} size="small" />
+            ) : (
+              <Text style={styles.username}>{profile?.username ?? 'Astronaute'}</Text>
+            )}
           </View>
           <View style={styles.avatarContainer}>
             <Text style={styles.avatarEmoji}>👨‍🚀</Text>
@@ -49,9 +71,9 @@ export default function HomeScreen() {
         >
           {/* Barre XP */}
           <XPBar
-            xp={380}
-            xpToNext={120}
-            rankLabel="Niveau Curieux"
+            xp={xp % XP_PER_LEVEL}
+            xpToNext={xpToNext}
+            rankLabel={rankLabel}
             nextRank="OBSERVATEUR"
           />
 
@@ -66,7 +88,7 @@ export default function HomeScreen() {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.themesRow}
             >
-              {THEMES.map((theme: Theme) => (
+              {themes.map((theme: Theme) => (
                 <ThemeChip
                   key={theme.id}
                   theme={theme}
@@ -84,12 +106,12 @@ export default function HomeScreen() {
           <View style={styles.statsGrid}>
             <View style={styles.statCard}>
               <Text style={styles.statIcon}>📊</Text>
-              <Text style={styles.statValue}>14</Text>
+              <Text style={styles.statValue}>{String(stats.modulesCompleted).padStart(2, '0')}</Text>
               <Text style={styles.statLabel}>Modules terminés</Text>
             </View>
             <View style={styles.statCard}>
               <Text style={styles.statIcon}>🏆</Text>
-              <Text style={styles.statValue}>08</Text>
+              <Text style={styles.statValue}>{String(stats.badgesEarned).padStart(2, '0')}</Text>
               <Text style={styles.statLabel}>Badges acquis</Text>
             </View>
           </View>

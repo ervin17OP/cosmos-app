@@ -151,7 +151,9 @@ export default function ModuleScreen() {
 
       case 'quiz_teaser':
         return (
-          <TouchableOpacity key={index} style={styles.quizTeaser} activeOpacity={0.85}>
+          <TouchableOpacity key={index} style={styles.quizTeaser} activeOpacity={0.85}
+            onPress={() => (router as any).push({ pathname: '/quiz/[moduleId]', params: { moduleId: module.id } })}
+          >
             <View style={styles.quizDecor}>
               <Text style={styles.quizDecorText}>🧠</Text>
             </View>

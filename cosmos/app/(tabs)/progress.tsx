@@ -5,12 +5,15 @@ import {
   Text,
   ScrollView,
   StyleSheet,
+  ActivityIndicator,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StarField } from '@/components/ui/StarField';
 import { Colors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
+import { useProfile } from '@/hooks/useProfile';
+import { useProgress } from '@/hooks/useProgress';
 
 interface Badge {
   id: string;
@@ -20,22 +23,42 @@ interface Badge {
   unlocked: boolean;
 }
 
-const BADGES: Badge[] = [
-  { id: '1', icon: '⭐', label: 'Premier Pas', color: Colors.primary, unlocked: true },
-  { id: '2', icon: '⏱', label: 'Relativiste', color: Colors.secondary, unlocked: true },
-  { id: '3', icon: '🔒', label: 'Singularité', color: Colors.onSurfaceVariant, unlocked: false },
-  { id: '4', icon: '🌍', label: 'Géologue', color: Colors.tertiary, unlocked: true },
-  { id: '5', icon: '🔒', label: 'Pulsar', color: Colors.onSurfaceVariant, unlocked: false },
-  { id: '6', icon: '🔒', label: 'Andromède', color: Colors.onSurfaceVariant, unlocked: false },
+// Badges statiques débloqués selon le nombre de modules complétés
+const ALL_BADGES: Badge[] = [
+  { id: '1', icon: '⭐', label: 'Premier Pas', color: Colors.primary, unlocked: false },
+  { id: '2', icon: '⏱', label: 'Relativiste', color: Colors.secondary, unlocked: false },
+  { id: '3', icon: '🌑', label: 'Singularité', color: Colors.onSurfaceVariant, unlocked: false },
+  { id: '4', icon: '🌍', label: 'Géologue', color: Colors.tertiary, unlocked: false },
+  { id: '5', icon: '〰️', label: 'Pulsar', color: Colors.onSurfaceVariant, unlocked: false },
+  { id: '6', icon: '💥', label: 'Andromède', color: Colors.onSurfaceVariant, unlocked: false },
 ];
 
-const THEME_PROGRESS = [
-  { title: 'Système Solaire', percentage: 85 },
-  { title: 'Relativité & Temps', percentage: 42 },
-  { title: 'Vie Extraterrestre', percentage: 10 },
-];
+const LEVEL_LABELS: Record<string, string> = {
+  curious: 'Curieux',
+  passionate: 'Passionné',
+  student: 'Étudiant',
+};
 
 export default function ProgressScreen() {
+  const { profile, loading: profileLoading } = useProfile();
+  const { stats, loading: statsLoading } = useProgress();
+
+  const loading = profileLoading || statsLoading;
+
+  // Débloquer les badges selon le nombre de modules complétés
+  const badges = ALL_BADGES.map((badge, i) => ({
+    ...badge,
+    unlocked: i < stats.badgesEarned,
+  }));
+
+  // Progression par thème depuis Supabase, ou fallback vide
+  const themeProgress = stats.themeProgress.length > 0
+    ? stats.themeProgress.map((t) => ({ title: t.themeTitle, percentage: t.percentage }))
+    : [];
+
+  const xp = profile?.xp ?? 0;
+  const level = profile?.level ?? 'curious';
+
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
@@ -55,19 +78,22 @@ export default function ProgressScreen() {
           {/* Badge de niveau circulaire */}
           <View style={styles.levelBadgeSection}>
             <View style={styles.levelBadgeWrapper}>
-              {/* Halo externe */}
               <View style={styles.levelBadgeGlow} />
               <View style={styles.levelBadge}>
-                {/* Indicator de niveau */}
                 <View style={styles.levelPill}>
-                  <Text style={styles.levelPillText}>Niveau 12</Text>
+                  <Text style={styles.levelPillText}>{xp} XP</Text>
                 </View>
-                <Text style={styles.levelBadgeLabel}>Niveau{'\n'}Curieux</Text>
-                <View style={styles.xpBlock}>
-                  <Text style={styles.xpHint}>Points d'XP</Text>
-                  <Text style={styles.xpBig}>2,840</Text>
-                </View>
-                {/* Anneau orbital */}
+                {loading ? (
+                  <ActivityIndicator color={Colors.primary} />
+                ) : (
+                  <>
+                    <Text style={styles.levelBadgeLabel}>Niveau{'\n'}{LEVEL_LABELS[level]}</Text>
+                    <View style={styles.xpBlock}>
+                      <Text style={styles.xpHint}>Modules terminés</Text>
+                      <Text style={styles.xpBig}>{stats.modulesCompleted}</Text>
+                    </View>
+                  </>
+                )}
                 <View style={styles.orbitalRing} />
               </View>
             </View>
@@ -77,17 +103,17 @@ export default function ProgressScreen() {
           <View style={styles.statsGrid}>
             <View style={styles.statCard}>
               <Text style={styles.statIcon}>🚀</Text>
-              <Text style={styles.statValue}>14</Text>
+              <Text style={styles.statValue}>{String(stats.modulesCompleted).padStart(2, '0')}</Text>
               <Text style={styles.statLabel}>Modules{'\n'}Terminés</Text>
             </View>
             <View style={[styles.statCard, styles.statCardCyan]}>
               <Text style={styles.statIcon}>🔥</Text>
-              <Text style={styles.statValue}>07</Text>
+              <Text style={styles.statValue}>{String(profile?.streakDays ?? 0).padStart(2, '0')}</Text>
               <Text style={styles.statLabel}>Jours{'\n'}Série</Text>
             </View>
             <View style={styles.statCard}>
               <Text style={styles.statIcon}>🎖️</Text>
-              <Text style={styles.statValue}>12</Text>
+              <Text style={styles.statValue}>{String(stats.badgesEarned).padStart(2, '0')}</Text>
               <Text style={styles.statLabel}>Badges{'\n'}Gagnés</Text>
             </View>
           </View>
@@ -98,21 +124,25 @@ export default function ProgressScreen() {
               <View style={styles.sectionAccent} />
               <Text style={styles.sectionTitle}>Thèmes explorés</Text>
             </View>
-            <View style={styles.progressList}>
-              {THEME_PROGRESS.map((item, index) => (
-                <View key={index} style={styles.progressItem}>
-                  <View style={styles.progressLabelRow}>
-                    <Text style={styles.progressLabel}>{item.title}</Text>
-                    <Text style={styles.progressPercent}>{item.percentage}%</Text>
-                  </View>
-                  <View style={styles.progressTrack}>
-                    <View style={[styles.progressFill, { width: `${item.percentage}%` }]}>
-                      <View style={styles.progressGlowHead} />
+            {themeProgress.length === 0 ? (
+              <Text style={styles.emptyText}>Complétez des modules pour voir votre progression.</Text>
+            ) : (
+              <View style={styles.progressList}>
+                {themeProgress.map((item, index) => (
+                  <View key={index} style={styles.progressItem}>
+                    <View style={styles.progressLabelRow}>
+                      <Text style={styles.progressLabel}>{item.title}</Text>
+                      <Text style={styles.progressPercent}>{item.percentage}%</Text>
+                    </View>
+                    <View style={styles.progressTrack}>
+                      <View style={[styles.progressFill, { width: `${item.percentage}%` as any }]}>
+                        <View style={styles.progressGlowHead} />
+                      </View>
                     </View>
                   </View>
-                </View>
-              ))}
-            </View>
+                ))}
+              </View>
+            )}
           </View>
 
           {/* Badges */}
@@ -123,7 +153,7 @@ export default function ProgressScreen() {
               <Text style={styles.viewAll}>Voir tout</Text>
             </View>
             <View style={styles.badgesGrid}>
-              {BADGES.map((badge) => (
+              {badges.map((badge) => (
                 <View key={badge.id} style={[styles.badgeItem, !badge.unlocked && styles.badgeLocked]}>
                   <View
                     style={[
@@ -254,4 +284,5 @@ const styles = StyleSheet.create({
   badgeLabel: { fontFamily: Typography.fontFamily.label, fontSize: 9, color: Colors.onSurface, textTransform: 'uppercase', textAlign: 'center', letterSpacing: 0.5 },
   decoPurple: { position: 'absolute', top: '25%', right: -80, width: 200, height: 200, borderRadius: 100, backgroundColor: Colors.primary, opacity: 0.05 },
   decoCyan: { position: 'absolute', bottom: '25%', left: -80, width: 160, height: 160, borderRadius: 80, backgroundColor: Colors.secondary, opacity: 0.04 },
+  emptyText: { fontFamily: Typography.fontFamily.body, fontSize: Typography.fontSize.sm, color: Colors.onSurfaceVariant, textAlign: 'center', paddingVertical: 16 },
 });
