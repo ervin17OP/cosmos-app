@@ -92,6 +92,13 @@ const DEMO_CONTENT: Record<UserLevel, ContentBlock[]> = {
   ],
 };
 
+interface ModuleInfo {
+  title: string;
+  emoji: string;
+  slug: string;
+  isPremium: boolean;
+}
+
 export default function ModuleScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -99,8 +106,16 @@ export default function ModuleScreen() {
   const [activeLevel, setActiveLevel] = useState<UserLevel>(userLevel);
   const [content, setContent] = useState<ContentBlock[]>([]);
   const [loading, setLoading] = useState(true);
+  const [moduleInfo, setModuleInfo] = useState<ModuleInfo | null>(null);
 
-  const module = MODULES.find((m) => m.id === id) ?? MODULES[0];
+  // Fallback info depuis les constantes locales (démo sans Supabase)
+  const localModule = MODULES.find((m) => m.id === id) ?? MODULES[0];
+  const displayModule: ModuleInfo = moduleInfo ?? {
+    title: localModule.title,
+    emoji: localModule.emoji ?? '🪐',
+    slug: localModule.slug,
+    isPremium: localModule.isPremium,
+  };
 
   useEffect(() => {
     setActiveLevel(userLevel);
@@ -109,6 +124,38 @@ export default function ModuleScreen() {
   useEffect(() => {
     loadContent(activeLevel);
   }, [activeLevel, id]);
+
+  useEffect(() => {
+    async function fetchModuleInfo() {
+      try {
+        const { data } = await supabase
+          .from('modules')
+          .select('title, slug, is_premium')
+          .eq('id', id)
+          .single();
+        if (data) {
+          // Dériver l'emoji depuis le slug
+          const emojiMap: Record<string, string> = {
+            'relativite-restreinte': '⚡',
+            'relativite-generale': '🌌',
+            'lois-kepler': '☀️',
+            'gravitation-universelle': '🍎',
+            'naissance-trou-noir': '⭐',
+            'horizon-evenements': '🌑',
+          };
+          setModuleInfo({
+            title: data.title,
+            slug: data.slug,
+            emoji: emojiMap[data.slug] ?? '🪐',
+            isPremium: data.is_premium,
+          });
+        }
+      } catch {
+        // garder le fallback local
+      }
+    }
+    fetchModuleInfo();
+  }, [id]);
 
   async function loadContent(level: UserLevel) {
     setLoading(true);
@@ -152,7 +199,7 @@ export default function ModuleScreen() {
       case 'quiz_teaser':
         return (
           <TouchableOpacity key={index} style={styles.quizTeaser} activeOpacity={0.85}
-            onPress={() => (router as any).push({ pathname: '/quiz/[moduleId]', params: { moduleId: module.id } })}
+            onPress={() => (router as any).push({ pathname: '/quiz/[moduleId]', params: { moduleId: id } })}
           >
             <View style={styles.quizDecor}>
               <Text style={styles.quizDecorText}>🧠</Text>
@@ -191,9 +238,9 @@ export default function ModuleScreen() {
         <View style={styles.hero}>
           <View style={styles.heroBg} />
           <View style={styles.heroContent}>
-            <Text style={styles.heroEmoji}>🪐</Text>
-            <Text style={styles.heroMeta}>✦ RELATIVITÉ · EINSTEIN · 1905</Text>
-            <Text style={styles.heroTitle}>{module.title}</Text>
+            <Text style={styles.heroEmoji}>{displayModule.emoji}</Text>
+            <Text style={styles.heroMeta}>✦ COSMOS · MODULE{displayModule.isPremium ? ' · PREMIUM' : ''}</Text>
+            <Text style={styles.heroTitle}>{displayModule.title}</Text>
           </View>
         </View>
 

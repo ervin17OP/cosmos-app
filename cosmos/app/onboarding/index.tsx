@@ -1,13 +1,21 @@
-// Écran Splash / Onboarding — point d'entrée de l'app
-import React, { useEffect, useRef } from 'react';
+// Écran Splash / Onboarding — animations Reanimated v4 (UI thread)
+import React, { useEffect } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
-  Animated,
   Dimensions,
 } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  withRepeat,
+  withSequence,
+  withDelay,
+} from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -20,60 +28,46 @@ const { width } = Dimensions.get('window');
 export default function SplashScreen() {
   const router = useRouter();
 
-  // Animations d'entrée
-  const logoScale = useRef(new Animated.Value(0.7)).current;
-  const logoOpacity = useRef(new Animated.Value(0)).current;
-  const textOpacity = useRef(new Animated.Value(0)).current;
-  const buttonsOpacity = useRef(new Animated.Value(0)).current;
-  const ringPulse = useRef(new Animated.Value(1)).current;
+  // Shared values
+  const logoScale    = useSharedValue(0.7);
+  const logoOpacity  = useSharedValue(0);
+  const textOpacity  = useSharedValue(0);
+  const btnsOpacity  = useSharedValue(0);
+  const ringScale    = useSharedValue(1);
 
   useEffect(() => {
-    // Séquence d'animation d'entrée
-    Animated.sequence([
-      // Logo apparaît
-      Animated.parallel([
-        Animated.spring(logoScale, {
-          toValue: 1,
-          tension: 60,
-          friction: 8,
-          useNativeDriver: true,
-        }),
-        Animated.timing(logoOpacity, {
-          toValue: 1,
-          duration: 600,
-          useNativeDriver: true,
-        }),
-      ]),
-      // Texte apparaît
-      Animated.timing(textOpacity, {
-        toValue: 1,
-        duration: 500,
-        useNativeDriver: true,
-      }),
-      // Boutons apparaissent
-      Animated.timing(buttonsOpacity, {
-        toValue: 1,
-        duration: 400,
-        useNativeDriver: true,
-      }),
-    ]).start();
+    // Logo pop-in
+    logoScale.value   = withSpring(1, { damping: 14, stiffness: 100 });
+    logoOpacity.value = withTiming(1, { duration: 600 });
 
-    // Animation pulse continue du logo
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(ringPulse, {
-          toValue: 1.12,
-          duration: 2000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(ringPulse, {
-          toValue: 1,
-          duration: 2000,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
+    // Texte légèrement après
+    textOpacity.value = withDelay(500, withTiming(1, { duration: 500 }));
+
+    // Boutons encore après
+    btnsOpacity.value = withDelay(900, withTiming(1, { duration: 400 }));
+
+    // Pulsation continue du ring extérieur
+    ringScale.value = withRepeat(
+      withSequence(
+        withTiming(1.12, { duration: 2000 }),
+        withTiming(1,    { duration: 2000 })
+      ),
+      -1,
+      false
+    );
   }, []);
+
+  const logoStyle = useAnimatedStyle(() => ({
+    opacity:   logoOpacity.value,
+    transform: [{ scale: logoScale.value }],
+  }));
+
+  const ringStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: ringScale.value }],
+  }));
+
+  const textStyle  = useAnimatedStyle(() => ({ opacity: textOpacity.value }));
+  const btnsStyle  = useAnimatedStyle(() => ({ opacity: btnsOpacity.value }));
 
   return (
     <View style={styles.container}>
@@ -86,16 +80,9 @@ export default function SplashScreen() {
 
       <SafeAreaView style={styles.safeArea}>
         {/* Zone logo */}
-        <Animated.View
-          style={[
-            styles.logoWrapper,
-            { opacity: logoOpacity, transform: [{ scale: logoScale }] },
-          ]}
-        >
+        <Animated.View style={[styles.logoWrapper, logoStyle]}>
           {/* Anneaux concentriques */}
-          <Animated.View
-            style={[styles.ring, styles.ringOuter, { transform: [{ scale: ringPulse }] }]}
-          />
+          <Animated.View style={[styles.ring, styles.ringOuter, ringStyle]} />
           <View style={[styles.ring, styles.ringMiddle]} />
           <View style={[styles.ring, styles.ringInner]} />
 
@@ -106,14 +93,13 @@ export default function SplashScreen() {
         </Animated.View>
 
         {/* Typographie */}
-        <Animated.View style={[styles.textBlock, { opacity: textOpacity }]}>
+        <Animated.View style={[styles.textBlock, textStyle]}>
           <Text style={styles.title}>COSMOS</Text>
           <Text style={styles.subtitle}>L'univers à portée de main</Text>
         </Animated.View>
 
         {/* CTA */}
-        <Animated.View style={[styles.ctaBlock, { opacity: buttonsOpacity }]}>
-          {/* Bouton principal */}
+        <Animated.View style={[styles.ctaBlock, btnsStyle]}>
           <TouchableOpacity
             style={styles.primaryButton}
             onPress={() => router.push('/onboarding/level')}
@@ -122,7 +108,6 @@ export default function SplashScreen() {
             <Text style={styles.primaryButtonText}>Commencer l'exploration →</Text>
           </TouchableOpacity>
 
-          {/* Bouton secondaire (ghost) */}
           <TouchableOpacity
             style={styles.secondaryButton}
             onPress={() => router.push('/(auth)/login')}
@@ -137,10 +122,7 @@ export default function SplashScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
+  container: { flex: 1, backgroundColor: Colors.background },
   safeArea: {
     flex: 1,
     alignItems: 'center',
@@ -179,21 +161,9 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     borderWidth: 1.5,
   },
-  ringOuter: {
-    width: 160,
-    height: 160,
-    borderColor: `${Colors.primary}50`,
-  },
-  ringMiddle: {
-    width: 120,
-    height: 120,
-    borderColor: `${Colors.secondary}60`,
-  },
-  ringInner: {
-    width: 80,
-    height: 80,
-    borderColor: `${Colors.primary}30`,
-  },
+  ringOuter:  { width: 160, height: 160, borderColor: `${Colors.primary}50` },
+  ringMiddle: { width: 120, height: 120, borderColor: `${Colors.secondary}60` },
+  ringInner:  { width: 80,  height: 80,  borderColor: `${Colors.primary}30` },
   core: {
     width: 56,
     height: 56,
@@ -207,9 +177,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 0 },
     elevation: 8,
   },
-  coreEmoji: {
-    fontSize: 28,
-  },
+  coreEmoji: { fontSize: 28 },
   textBlock: {
     alignItems: 'center',
     marginBottom: 64,
@@ -233,10 +201,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     opacity: 0.9,
   },
-  ctaBlock: {
-    width: '100%',
-    gap: 14,
-  },
+  ctaBlock: { width: '100%', gap: 14 },
   primaryButton: {
     width: '100%',
     height: 56,
@@ -264,7 +229,6 @@ const styles = StyleSheet.create({
     borderColor: `${Colors.outlineVariant}30`,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'transparent',
   },
   secondaryButtonText: {
     fontFamily: Typography.fontFamily.headlineMedium,

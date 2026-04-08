@@ -26,9 +26,23 @@ import {
 import {
   SpaceMono_400Regular,
 } from '@expo-google-fonts/space-mono';
-import { supabase } from '@/lib/supabase';
+import { supabase, updateStreak } from '@/lib/supabase';
 import { Colors } from '@/constants/colors';
 import type { Session } from '@supabase/supabase-js';
+
+const STREAK_KEY = '@cosmos/streak_last_date';
+
+async function handleDailyStreak(userId: string) {
+  try {
+    const today = new Date().toISOString().slice(0, 10); // 'YYYY-MM-DD'
+    const lastDate = await AsyncStorage.getItem(STREAK_KEY);
+    if (lastDate === today) return; // déjà incrémenté aujourd'hui
+    await updateStreak(userId);
+    await AsyncStorage.setItem(STREAK_KEY, today);
+  } catch {
+    // silencieux — le streak n'est pas critique
+  }
+}
 
 // Composant de protection des routes authentifiées
 function AuthGuard({ children }: { children: React.ReactNode }) {
@@ -49,10 +63,13 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
       setChecked(true);
     });
 
-    // Écouter les changements d'état d'auth
+    // Écouter les changements d'état d'auth + streak quotidien
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      (event, session) => {
         setSession(session);
+        if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user) {
+          handleDailyStreak(session.user.id);
+        }
       }
     );
 

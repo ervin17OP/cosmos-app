@@ -1,13 +1,19 @@
-// Écran de sélection du niveau — Curieux / Passionné / Étudiant
-import React, { useState, useRef, useEffect } from 'react';
+// Écran de sélection du niveau — animations Reanimated v4 (UI thread)
+import React, { useState } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Animated,
 } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  withDelay,
+} from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -20,23 +26,83 @@ import { useUserLevel } from '@/hooks/useUserLevel';
 
 const LEVELS: UserLevel[] = ['curious', 'passionate', 'student'];
 
+// Composant carte animée isolé pour un re-render optimal
+function LevelCard({
+  level,
+  index,
+  isSelected,
+  onPress,
+}: {
+  level: UserLevel;
+  index: number;
+  isSelected: boolean;
+  onPress: () => void;
+}) {
+  const config = LEVEL_CONFIG[level];
+
+  // Animation d'entrée staggerée (montée + opacité)
+  const entranceY   = useSharedValue(40);
+  const entranceOp  = useSharedValue(0);
+
+  // Démarrer dès le mount (effet similaire à useEffect avec stagger)
+  entranceY.value  = withDelay(index * 120 + 200, withSpring(0, { damping: 18, stiffness: 80 }));
+  entranceOp.value = withDelay(index * 120 + 200, withTiming(1, { duration: 350 }));
+
+  const cardStyle = useAnimatedStyle(() => ({
+    opacity:   entranceOp.value,
+    transform: [{ translateY: entranceY.value }],
+  }));
+
+  return (
+    <Animated.View style={cardStyle}>
+      <TouchableOpacity
+        style={[
+          styles.card,
+          isSelected && {
+            borderColor: config.color,
+            shadowColor: config.color,
+            shadowOpacity: 0.35,
+            shadowRadius: 20,
+            elevation: 10,
+            backgroundColor: `${config.color}0D`,
+          },
+        ]}
+        onPress={onPress}
+        activeOpacity={0.8}
+      >
+        <View style={styles.cardTop}>
+          <Text style={styles.cardEmoji}>{config.emoji}</Text>
+          <View style={[styles.badge, { borderColor: `${config.color}40`, backgroundColor: `${config.color}1A` }]}>
+            <Text style={[styles.badgeText, { color: config.color }]}>{config.badge}</Text>
+          </View>
+        </View>
+
+        <View style={styles.cardTitleRow}>
+          <Text style={styles.cardTitle}>{config.label}</Text>
+          {isSelected && <Text style={[styles.checkIcon, { color: config.color }]}>✓</Text>}
+        </View>
+
+        <Text style={styles.cardDescription}>{config.description}</Text>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+}
+
 export default function LevelScreen() {
   const router = useRouter();
   const { saveLevel } = useUserLevel();
   const [selected, setSelected] = useState<UserLevel>('passionate');
 
-  // Animations d'entrée staggerées
-  const cardAnims = useRef(LEVELS.map(() => new Animated.Value(0))).current;
-  const headerAnim = useRef(new Animated.Value(0)).current;
+  // Animation d'entrée du header
+  const headerOp = useSharedValue(0);
+  const headerY  = useSharedValue(20);
+  headerOp.value = withTiming(1, { duration: 400 });
+  headerY.value  = withSpring(0, { damping: 18, stiffness: 80 });
 
-  useEffect(() => {
-    Animated.stagger(120, [
-      Animated.timing(headerAnim, { toValue: 1, duration: 400, useNativeDriver: true }),
-      ...cardAnims.map((anim) =>
-        Animated.spring(anim, { toValue: 1, tension: 60, friction: 8, useNativeDriver: true })
-      ),
-    ]).start();
-  }, []);
+  const headerStyle = useAnimatedStyle(() => ({
+    opacity:   headerOp.value,
+    transform: [{ translateY: headerY.value }],
+  }));
 
   async function handleContinue() {
     await saveLevel(selected);
@@ -49,7 +115,6 @@ export default function LevelScreen() {
       <StarField />
 
       <SafeAreaView style={styles.safeArea}>
-        {/* Header */}
         <View style={styles.topBar}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Text style={styles.backIcon}>←</Text>
@@ -63,73 +128,23 @@ export default function LevelScreen() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* Titre */}
-          <Animated.View
-            style={[
-              styles.header,
-              {
-                opacity: headerAnim,
-                transform: [{ translateY: headerAnim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }],
-              },
-            ]}
-          >
+          {/* Titre animé */}
+          <Animated.View style={[styles.header, headerStyle]}>
             <Text style={styles.overline}>Avant de commencer</Text>
             <Text style={styles.title}>Quel est ton{'\n'}niveau de départ ?</Text>
           </Animated.View>
 
           {/* Cartes de niveau */}
           <View style={styles.cards}>
-            {LEVELS.map((level, index) => {
-              const config = LEVEL_CONFIG[level];
-              const isSelected = selected === level;
-
-              return (
-                <Animated.View
-                  key={level}
-                  style={{
-                    opacity: cardAnims[index],
-                    transform: [
-                      {
-                        translateY: cardAnims[index].interpolate({
-                          inputRange: [0, 1],
-                          outputRange: [40, 0],
-                        }),
-                      },
-                    ],
-                  }}
-                >
-                  <TouchableOpacity
-                    style={[
-                      styles.card,
-                      isSelected && {
-                        borderColor: config.color,
-                        shadowColor: config.color,
-                        shadowOpacity: 0.35,
-                        shadowRadius: 20,
-                        elevation: 10,
-                        backgroundColor: `${config.color}0D`,
-                      },
-                    ]}
-                    onPress={() => setSelected(level)}
-                    activeOpacity={0.8}
-                  >
-                    <View style={styles.cardTop}>
-                      <Text style={styles.cardEmoji}>{config.emoji}</Text>
-                      <View style={[styles.badge, { borderColor: `${config.color}40`, backgroundColor: `${config.color}1A` }]}>
-                        <Text style={[styles.badgeText, { color: config.color }]}>{config.badge}</Text>
-                      </View>
-                    </View>
-
-                    <View style={styles.cardTitleRow}>
-                      <Text style={styles.cardTitle}>{config.label}</Text>
-                      {isSelected && <Text style={[styles.checkIcon, { color: config.color }]}>✓</Text>}
-                    </View>
-
-                    <Text style={styles.cardDescription}>{config.description}</Text>
-                  </TouchableOpacity>
-                </Animated.View>
-              );
-            })}
+            {LEVELS.map((level, index) => (
+              <LevelCard
+                key={level}
+                level={level}
+                index={index}
+                isSelected={selected === level}
+                onPress={() => setSelected(level)}
+              />
+            ))}
           </View>
         </ScrollView>
 
@@ -155,13 +170,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     backgroundColor: Colors.overlayLight,
   },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  backButton: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   backIcon: { color: `${Colors.primary}B0`, fontSize: 22 },
   logoText: {
     fontFamily: Typography.fontFamily.headline,
@@ -202,12 +211,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   cardEmoji: { fontSize: 32 },
-  badge: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 999,
-    borderWidth: 1,
-  },
+  badge: { paddingHorizontal: 12, paddingVertical: 4, borderRadius: 999, borderWidth: 1 },
   badgeText: {
     fontFamily: Typography.fontFamily.label,
     fontSize: 9,
@@ -232,7 +236,6 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
     paddingTop: 16,
     backgroundColor: Colors.background,
-    borderTopWidth: 0,
   },
   continueButton: {
     height: 56,
