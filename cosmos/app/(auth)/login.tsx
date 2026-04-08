@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Modal,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -25,6 +26,10 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [resetVisible, setResetVisible] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
 
   async function handleLogin() {
     if (!email.trim() || !password.trim()) {
@@ -45,6 +50,26 @@ export default function LoginScreen() {
       Alert.alert('Erreur de connexion', message);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleReset() {
+    if (!resetEmail.trim()) {
+      Alert.alert('Email requis', 'Saisissez votre adresse email.');
+      return;
+    }
+    setResetLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail.trim(), {
+        redirectTo: 'cosmos://reset-password',
+      });
+      if (error) throw error;
+      setResetSent(true);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Erreur inconnue';
+      Alert.alert('Erreur', message);
+    } finally {
+      setResetLoading(false);
     }
   }
 
@@ -122,6 +147,13 @@ export default function LoginScreen() {
                   <Text style={styles.loginButtonText}>Se connecter</Text>
                 )}
               </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => { setResetVisible(true); setResetSent(false); setResetEmail(email); }}
+                style={styles.forgotBtn}
+              >
+                <Text style={styles.forgotText}>Mot de passe oublié ?</Text>
+              </TouchableOpacity>
             </View>
 
             {/* Lien inscription */}
@@ -139,6 +171,69 @@ export default function LoginScreen() {
       </SafeAreaView>
 
       <View style={styles.decoBottomRight} />
+
+      {/* Modal reset mot de passe */}
+      <Modal
+        visible={resetVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setResetVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalSheet}>
+            <View style={styles.modalHandle} />
+
+            {resetSent ? (
+              /* Confirmation envoi */
+              <View style={styles.modalBody}>
+                <Text style={styles.modalEmoji}>📬</Text>
+                <Text style={styles.modalTitle}>Email envoyé !</Text>
+                <Text style={styles.modalDesc}>
+                  Vérifiez votre boîte mail. Le lien de réinitialisation est valable 1 heure.
+                </Text>
+                <TouchableOpacity
+                  style={styles.modalButton}
+                  onPress={() => setResetVisible(false)}
+                >
+                  <Text style={styles.modalButtonText}>Fermer</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              /* Formulaire email */
+              <View style={styles.modalBody}>
+                <Text style={styles.modalEmoji}>🔑</Text>
+                <Text style={styles.modalTitle}>Réinitialiser</Text>
+                <Text style={styles.modalDesc}>
+                  Saisissez votre email et nous vous enverrons un lien de réinitialisation.
+                </Text>
+                <TextInput
+                  style={styles.modalInput}
+                  placeholder="votre@email.com"
+                  placeholderTextColor={Colors.onSurfaceVariant}
+                  value={resetEmail}
+                  onChangeText={setResetEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+                <TouchableOpacity
+                  style={[styles.modalButton, resetLoading && { opacity: 0.6 }]}
+                  onPress={handleReset}
+                  disabled={resetLoading}
+                >
+                  {resetLoading ? (
+                    <ActivityIndicator color={Colors.onPrimary} />
+                  ) : (
+                    <Text style={styles.modalButtonText}>Envoyer le lien →</Text>
+                  )}
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setResetVisible(false)} style={styles.modalCancel}>
+                  <Text style={styles.modalCancelText}>Annuler</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -210,6 +305,86 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   loginButtonText: { fontFamily: Typography.fontFamily.headline, fontSize: Typography.fontSize.lg, color: Colors.onPrimary },
+  forgotBtn: { alignItems: 'center', paddingTop: 14 },
+  forgotText: {
+    fontFamily: Typography.fontFamily.body,
+    fontSize: Typography.fontSize.sm,
+    color: Colors.primaryDim,
+  },
+  // Modal reset
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'flex-end',
+  },
+  modalSheet: {
+    backgroundColor: '#1a1530',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 24,
+    paddingBottom: 48,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderColor: `${Colors.primary}30`,
+  },
+  modalHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: Colors.glassBorder,
+    alignSelf: 'center',
+    marginBottom: 24,
+  },
+  modalBody: { alignItems: 'center', gap: 14 },
+  modalEmoji: { fontSize: 44 },
+  modalTitle: {
+    fontFamily: Typography.fontFamily.cinzelBold,
+    fontSize: Typography.fontSize['2xl'],
+    color: Colors.onSurface,
+  },
+  modalDesc: {
+    fontFamily: Typography.fontFamily.body,
+    fontSize: Typography.fontSize.sm,
+    color: Colors.onSurfaceVariant,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 4,
+  },
+  modalInput: {
+    width: '100%',
+    height: 52,
+    paddingHorizontal: 16,
+    borderRadius: 14,
+    backgroundColor: Colors.glass,
+    borderWidth: 1,
+    borderColor: `${Colors.outlineVariant}60`,
+    color: Colors.onSurface,
+    fontFamily: Typography.fontFamily.body,
+    fontSize: Typography.fontSize.base,
+  },
+  modalButton: {
+    width: '100%',
+    height: 52,
+    backgroundColor: Colors.primary,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: Colors.primary,
+    shadowOpacity: 0.3,
+    shadowRadius: 14,
+    elevation: 6,
+  },
+  modalButtonText: {
+    fontFamily: Typography.fontFamily.headline,
+    fontSize: Typography.fontSize.md,
+    color: Colors.onPrimary,
+  },
+  modalCancel: { paddingVertical: 8 },
+  modalCancelText: {
+    fontFamily: Typography.fontFamily.body,
+    fontSize: Typography.fontSize.sm,
+    color: Colors.onSurfaceVariant,
+  },
   registerLink: {
     textAlign: 'center',
     fontFamily: Typography.fontFamily.body,

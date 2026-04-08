@@ -109,6 +109,7 @@ export default function ModuleScreen() {
   const [loading, setLoading] = useState(true);
   const [moduleInfo, setModuleInfo] = useState<ModuleInfo | null>(null);
   const [premiumModalVisible, setPremiumModalVisible] = useState(false);
+  const [completion, setCompletion] = useState<{ completed: boolean; score: number; total: number } | null>(null);
 
   // Fallback info depuis les constantes locales (démo sans Supabase)
   const localModule = MODULES.find((m) => m.id === id) ?? MODULES[0];
@@ -157,6 +158,27 @@ export default function ModuleScreen() {
       }
     }
     fetchModuleInfo();
+  }, [id]);
+
+  useEffect(() => {
+    async function fetchCompletion() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        const { data } = await supabase
+          .from('user_progress')
+          .select('completed, score')
+          .eq('user_id', user.id)
+          .eq('module_id', id)
+          .single();
+        if (data) {
+          setCompletion({ completed: data.completed, score: data.score, total: 3 });
+        }
+      } catch {
+        // pas de progression enregistrée
+      }
+    }
+    fetchCompletion();
   }, [id]);
 
   async function loadContent(level: UserLevel) {
@@ -253,6 +275,41 @@ export default function ModuleScreen() {
         >
           {/* Sélecteur de niveau */}
           <LevelSelector selectedLevel={activeLevel} onLevelChange={setActiveLevel} />
+
+          {/* Bannière de complétion */}
+          {completion && (
+            <TouchableOpacity
+              style={[
+                styles.completionBanner,
+                completion.completed ? styles.completionBannerDone : styles.completionBannerPartial,
+              ]}
+              activeOpacity={0.85}
+              onPress={() => (router as any).push({ pathname: '/quiz/[moduleId]', params: { moduleId: id } })}
+            >
+              <Text style={styles.completionBannerEmoji}>
+                {completion.completed ? '🏆' : '📝'}
+              </Text>
+              <View style={styles.completionBannerText}>
+                <Text style={styles.completionBannerTitle}>
+                  {completion.completed ? 'Module terminé !' : 'Quiz en cours'}
+                </Text>
+                <Text style={styles.completionBannerSub}>
+                  Score : {completion.score}/{completion.total} · Recommencer →
+                </Text>
+              </View>
+              <View style={[
+                styles.completionScore,
+                { backgroundColor: completion.completed ? `${Colors.secondary}25` : `${Colors.tertiary}20` },
+              ]}>
+                <Text style={[
+                  styles.completionScoreText,
+                  { color: completion.completed ? Colors.secondary : Colors.tertiary },
+                ]}>
+                  {Math.round((completion.score / completion.total) * 100)}%
+                </Text>
+              </View>
+            </TouchableOpacity>
+          )}
 
           {/* Contenu ou premium gate */}
           {loading ? (
@@ -397,6 +454,48 @@ const styles = StyleSheet.create({
   quizPlayIcon: { color: Colors.onPrimary, fontSize: 18, marginLeft: 2 },
   decoPurple: { position: 'absolute', top: '25%', right: -80, width: 200, height: 200, borderRadius: 100, backgroundColor: Colors.primary, opacity: 0.05 },
   decoCyan: { position: 'absolute', bottom: '25%', left: -80, width: 160, height: 160, borderRadius: 80, backgroundColor: Colors.secondary, opacity: 0.04 },
+  // Bannière complétion
+  completionBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    borderRadius: 18,
+    padding: 16,
+    borderWidth: 1,
+  },
+  completionBannerDone: {
+    backgroundColor: `${Colors.secondary}0D`,
+    borderColor: `${Colors.secondary}30`,
+  },
+  completionBannerPartial: {
+    backgroundColor: `${Colors.tertiary}0A`,
+    borderColor: `${Colors.tertiary}25`,
+  },
+  completionBannerEmoji: { fontSize: 28 },
+  completionBannerText: { flex: 1 },
+  completionBannerTitle: {
+    fontFamily: Typography.fontFamily.headline,
+    fontSize: Typography.fontSize.base,
+    color: Colors.onSurface,
+    marginBottom: 3,
+  },
+  completionBannerSub: {
+    fontFamily: Typography.fontFamily.label,
+    fontSize: Typography.fontSize.xs,
+    color: Colors.onSurfaceVariant,
+    letterSpacing: 0.5,
+  },
+  completionScore: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  completionScoreText: {
+    fontFamily: Typography.fontFamily.cinzel,
+    fontSize: Typography.fontSize.sm,
+  },
   // Premium gate
   premiumGate: { marginTop: 4, position: 'relative', borderRadius: 20, overflow: 'hidden' },
   premiumBlur: {

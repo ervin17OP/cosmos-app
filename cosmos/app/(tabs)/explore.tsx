@@ -1,6 +1,6 @@
-// Écran Explorer — carte des thèmes avec badges de complétion
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+// Écran Explorer — carte des thèmes avec badges de complétion et recherche
+import React, { useState, useMemo } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -17,6 +17,30 @@ export default function ExploreScreen() {
   const { themes, modules, loading: themesLoading } = useThemes();
   const { stats, loading: progressLoading } = useProgress();
   const [premiumModule, setPremiumModule] = useState<Module | null>(null);
+  const [query, setQuery] = useState('');
+
+  // Filtrage insensible à la casse sur titre module + titre thème
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return { themes, modules };
+
+    const matchingModules = modules.filter(
+      (m) => m.title.toLowerCase().includes(q)
+    );
+    const matchingThemeIds = new Set([
+      ...matchingModules.map((m) => m.themeId),
+      ...themes.filter((t) => t.title.toLowerCase().includes(q)).map((t) => t.id),
+    ]);
+    const filteredThemes = themes.filter((t) => matchingThemeIds.has(t.id));
+    // Pour un thème dont le titre matche, montrer tous ses modules
+    const themesTitlesMatch = new Set(
+      themes.filter((t) => t.title.toLowerCase().includes(q)).map((t) => t.id)
+    );
+    const filteredModules = modules.filter(
+      (m) => m.title.toLowerCase().includes(q) || themesTitlesMatch.has(m.themeId)
+    );
+    return { themes: filteredThemes, modules: filteredModules };
+  }, [query, themes, modules]);
 
   const loading = themesLoading || progressLoading;
   const completedIds = new Set(stats.completedModuleIds ?? []);
@@ -32,16 +56,47 @@ export default function ExploreScreen() {
           <Text style={styles.subtitle}>Tous les thèmes astronomiques</Text>
         </View>
 
+        {/* Barre de recherche */}
+        <View style={styles.searchRow}>
+          <View style={styles.searchBox}>
+            <Text style={styles.searchIcon}>🔍</Text>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Rechercher un module ou un thème…"
+              placeholderTextColor={Colors.onSurfaceVariant}
+              value={query}
+              onChangeText={setQuery}
+              autoCapitalize="none"
+              autoCorrect={false}
+              returnKeyType="search"
+            />
+            {query.length > 0 && (
+              <TouchableOpacity onPress={() => setQuery('')} style={styles.clearBtn}>
+                <Text style={styles.clearBtnText}>✕</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
           {loading ? (
             <ActivityIndicator color={Colors.primary} size="large" style={{ marginTop: 60 }} />
           ) : null}
 
-          {themes.map((theme: Theme) => {
-            const themeModules = modules.filter((m) => m.themeId === theme.id);
+          {/* Aucun résultat */}
+          {!loading && query.length > 0 && filtered.themes.length === 0 && (
+            <View style={styles.emptySearch}>
+              <Text style={styles.emptySearchEmoji}>🌌</Text>
+              <Text style={styles.emptySearchText}>Aucun résultat pour « {query} »</Text>
+            </View>
+          )}
+
+          {filtered.themes.map((theme: Theme) => {
+            const themeModules = filtered.modules.filter((m) => m.themeId === theme.id);
             const completedCount = themeModules.filter((m) => completedIds.has(m.id)).length;
             const freeCount = themeModules.filter((m) => !m.isPremium).length;
 
@@ -144,6 +199,35 @@ const styles = StyleSheet.create({
     fontSize: Typography.fontSize.sm,
     color: Colors.onSurfaceVariant,
     marginTop: 4,
+  },
+  searchRow: { paddingHorizontal: 20, paddingBottom: 12 },
+  searchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.surfaceContainerLow,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Colors.glassBorder,
+    paddingHorizontal: 14,
+    height: 48,
+    gap: 10,
+  },
+  searchIcon: { fontSize: 16 },
+  searchInput: {
+    flex: 1,
+    fontFamily: Typography.fontFamily.body,
+    fontSize: Typography.fontSize.base,
+    color: Colors.onSurface,
+  },
+  clearBtn: { padding: 4 },
+  clearBtnText: { color: Colors.onSurfaceVariant, fontSize: 12 },
+  emptySearch: { alignItems: 'center', paddingVertical: 60, gap: 12 },
+  emptySearchEmoji: { fontSize: 40 },
+  emptySearchText: {
+    fontFamily: Typography.fontFamily.body,
+    fontSize: Typography.fontSize.sm,
+    color: Colors.onSurfaceVariant,
+    textAlign: 'center',
   },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 100, gap: 28 },
   themeSection: { gap: 10 },
